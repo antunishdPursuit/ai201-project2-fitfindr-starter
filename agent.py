@@ -187,9 +187,15 @@ def run_agent(query: str, wardrobe: dict) -> dict:
         )
         return session
 
-    # Step 6: turn the outfit + listing into a shareable fit card.
+    # Step 6: turn the outfit + listing into a shareable fit card. Tell the tool
+    # whether the outfit was built from owned pieces — with an empty wardrobe the
+    # suggestion is only general advice, so the caption must stay aspirational
+    # instead of claiming the user wore pieces they don't have.
+    has_wardrobe = bool((session["wardrobe"] or {}).get("items"))
     fit_card = create_fit_card(
-        outfit=session["outfit_suggestion"], new_item=session["selected_item"]
+        outfit=session["outfit_suggestion"],
+        new_item=session["selected_item"],
+        styled_from_wardrobe=has_wardrobe,
     )
     if not fit_card or fit_card.startswith("I couldn't create a fit card"):
         session["error"] = fit_card or (

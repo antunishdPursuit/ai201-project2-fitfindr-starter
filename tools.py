@@ -203,13 +203,23 @@ def suggest_outfit(new_item: dict, wardrobe: dict) -> str:
 
 # ── Tool 3: create_fit_card ───────────────────────────────────────────────────
 
-def create_fit_card(outfit: str, new_item: dict) -> str:
+def create_fit_card(
+    outfit: str,
+    new_item: dict,
+    styled_from_wardrobe: bool = True,
+) -> str:
     """
     Generate a short, shareable outfit caption for the thrifted find.
 
     Args:
         outfit:   The outfit suggestion string from suggest_outfit().
         new_item: The listing dict for the thrifted item.
+        styled_from_wardrobe: True when the outfit was built from pieces the user
+                  actually owns (so the caption can claim a worn look, e.g.
+                  "I paired it with my jeans"). False when the outfit is only
+                  general advice (empty wardrobe) — the caption must stay
+                  aspirational ("I'd style it with...") and must NOT claim the
+                  user owns or wore the suggested pieces.
 
     Returns:
         A 2–4 sentence string usable as an Instagram/TikTok caption.
@@ -243,7 +253,26 @@ def create_fit_card(outfit: str, new_item: dict) -> str:
     ):
         return _INCOMPLETE
 
-    # 2. Build the prompt with item details + the outfit.
+    # 2. Build the prompt with item details + the outfit. The voice depends on
+    #    whether the outfit was built from pieces the user actually owns.
+    if styled_from_wardrobe:
+        voice_rules = (
+            "- Sound like a real person's OOTD post, not a product description.\n"
+            "- You MAY describe wearing the look in the present/past tense "
+            "(e.g. \"paired it with my jeans\"), since these are pieces the "
+            "shopper already owns.\n"
+        )
+    else:
+        voice_rules = (
+            "- The shopper has NOT told us what they own — the outfit text is "
+            "general styling advice, not pieces they have.\n"
+            "- Do NOT claim they own or wore any specific piece. Do not say "
+            "\"I layered\" or \"I paired it with\" about clothes they don't have.\n"
+            "- Frame styling as ideas/intentions instead (e.g. \"I'd style it "
+            "with...\", \"thinking of pairing it with...\"). The only item they "
+            "actually have is the thrifted find itself.\n"
+        )
+
     prompt = (
         "Write a short, shareable OOTD caption (2-4 sentences) for a thrifted find.\n\n"
         f"Item: {new_item['title']}\n"
@@ -253,7 +282,7 @@ def create_fit_card(outfit: str, new_item: dict) -> str:
         f"Style tags: {', '.join(new_item.get('style_tags', []))}\n\n"
         f"Outfit it's being styled in:\n{outfit}\n\n"
         "Rules:\n"
-        "- Sound like a real person's OOTD post, not a product description.\n"
+        f"{voice_rules}"
         "- Mention the item name, price, and platform naturally — once each.\n"
         "- Capture the outfit vibe in specific terms.\n"
         "- Just return the caption text, no quotes or hashtag dump."
